@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
@@ -17,6 +19,7 @@ type container struct {
 	imageID   string
 	pod       string
 	namespace string
+	k8s_group string
 }
 
 func (c *container) labels() prometheus.Labels {
@@ -28,6 +31,7 @@ func (c *container) labels() prometheus.Labels {
 		"image_id":            fmt.Sprintf("docker-pullable://%s", c.imageID),
 		"pod":                 c.pod,
 		"namespace":           c.namespace,
+		"k8s_group":           c.k8s_group,
 	}
 }
 
@@ -83,12 +87,27 @@ func (eh *eventHandler) addContainer(id, name, imageID string) *container {
 
 	pod, namespace := eh.getContainerPodAndNamespace(id)
 
+	deployments := os.Getenv("K8S_DEPLOYMENTS")
+	statefulsets := os.Getenv("K8S_STATEFULSETS")
+	deployments_regex := fmt.Sprintf("^(%s)-[^-]*-[^-]*$", deployments)
+	statefulsets_regex := fmt.Sprintf("^(%s)-[^-]*$", statefulsets)
+	regexes := []string{deployments_regex, statefulsets_regex}
+	k8s_group := ""
+	for _, r := range regexes {
+		re := regexp.MustCompile(r)
+		parts := re.FindStringSubmatch(pod)
+		if len(parts) > 1 {
+			k8s_group = parts[1]
+		}
+	}
+
 	c := &container{
 		id:        id,
 		name:      name,
 		imageID:   imageID,
 		pod:       pod,
 		namespace: namespace,
+		k8s_group: k8s_group,
 	}
 
 	c.create()

@@ -10,6 +10,7 @@ var labelNames = []string{
 	"image_id",
 	"pod",
 	"namespace",
+	"k8s_group",
 }
 
 var containerRestarts = prometheus.NewCounterVec(
