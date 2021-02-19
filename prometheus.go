@@ -38,7 +38,5 @@ var containerLastExitCode = prometheus.NewGaugeVec(
 )
 
 func init() {
-	prometheus.MustRegister(containerRestarts)
 	prometheus.MustRegister(containerOOMs)
-	prometheus.MustRegister(containerLastExitCode)
 }
