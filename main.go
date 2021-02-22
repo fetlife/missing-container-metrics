@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
@@ -76,7 +77,9 @@ func main() {
 
 			}
 
-			http.Handle("/metrics", promhttp.Handler())
+			prometheus.Unregister(prometheus.NewGoCollector())
+			prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+			http.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 			a := c.String("bind-address")
 
 			go func() {
